@@ -132,7 +132,15 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
 
         for tc in msg.tool_calls:
             tool_name = tc.function.name
-            tool_input = json.loads(tc.function.arguments)
+            try:
+                tool_input = json.loads(tc.function.arguments)
+            except json.JSONDecodeError as e:
+                log.error("工具参数解析失败: %s | error: %s", tc.function.arguments, str(e))
+                memory.session_messages.append({
+                    "role": "tool", "tool_call_id": tc.id,
+                    "content": json.dumps({"ok": False, "error": "参数解析失败"}, ensure_ascii=False),
+                })
+                continue
             log.info("工具调用 [step=%d]: %s %s", step, tool_name, tool_input)
 
             if is_dangerous(tool_name):
