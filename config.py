@@ -1,6 +1,6 @@
-API_KEY = "sk-bf3bc8dfc7f54350a538ff91fa5baaa5"
-BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-MODEL = "qwen3.6-plus"
+API_KEY = "sk-xxx"
+BASE_URL = ""
+MODEL = ""
 MAX_REACT_STEPS = 10
 MEMORY_FILE = "memory.json"
 
