@@ -48,7 +48,15 @@ python agent.py
 
 ```
 你: 为什么电脑打游戏卡？
-Assistant: 已将电源计划切换为高性能模式，游戏性能应有所提升。
+Assistant: 正在思考...
+[调用] get_active_power_plan
+[结果] 当前电源计划：节能
+
+[警告] 即将执行高危操作: set_active_power_plan
+参数: {"plan_name": "高性能"}
+确认执行? (y/n): y
+[调用] set_active_power_plan
+[结果] 已切换至高性能模式
 ```
 
 ## 会话命令
@@ -90,4 +98,4 @@ PC_MANAGER_AGENT/
 ├── logs/                 # 运行时生成，每日日志
 ├── pyscripts/            # Python 工具封装
 └── scripts/              # PowerShell 脚本
-```
+```"# pc-manager-agent" 
