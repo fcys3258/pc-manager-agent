@@ -1,3 +1,5 @@
+# 配置文件，定义工具类别、工具列表、危险工具等
+
 API_KEY = "sk-xxx"
 BASE_URL = ""
 MODEL = ""
@@ -63,3 +65,18 @@ DANGEROUS_TOOLS = {
     "reset_winhttp_proxy", "clear_proxy_config", "start_service", "set_printer_config",
     "control_print_job", "set_default_printer",
 }
+
+# 从.env文件加载环境变量（如果存在），覆盖默认配置
+from pathlib import Path
+
+env_file = Path('.env')
+if env_file.exists():
+    with open(env_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                key, value = key.strip(), value.strip()
+                # 覆盖已有配置
+                if key in globals():
+                    globals()[key] = value
