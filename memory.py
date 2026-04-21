@@ -6,6 +6,7 @@ from config import MEMORY_FILE
 
 class Memory:
     def __init__(self):
+        self.system = ""
         self.session_messages: list[dict] = []
         self.facts: dict = self._load_facts()
 
@@ -23,7 +24,7 @@ class Memory:
         self.session_messages.append({"role": role, "content": content})
 
     def get_messages(self) -> list[dict]:
-        return self.session_messages
+        return [{"role": "system", "content": self.system}] + self.session_messages
 
     def build_system_prompt(self, categories: list[str]) -> str:
         facts_str = json.dumps(self.facts, ensure_ascii=False, indent=2)
@@ -104,7 +105,7 @@ class Memory:
         export_data = {
             "timestamp": timestamp,
             "message_count": len(self.session_messages),
-            "messages": self.session_messages
+            "messages": self.get_messages()
         }
         
         with open(file_path, "w", encoding="utf-8") as f:

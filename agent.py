@@ -43,8 +43,12 @@ class Spinner:
 
     def set(self, msg: str):
         self._msg = msg
+        if self._t is None or not self._t.is_alive():
+            self.start(msg)
 
     def start(self, msg: str = ""):
+        if self._t and self._t.is_alive():
+            self.stop()
         self._msg = msg
         self._stop.clear()
         self._t = threading.Thread(target=self._run, daemon=True)
@@ -77,7 +81,6 @@ def _log_response(msg, finish_reason):
 # ── Core ──────────────────────────────────────────────────────────────────────
 
 def confirm_dangerous(tool_name: str, tool_input: dict) -> bool:
-    spinner.stop()
     print(f"\n[警告] 即将执行高危操作: {tool_name}")
     print(f"参数: {json.dumps(tool_input, ensure_ascii=False)}")
     ans = input("确认执行? (y/n): ").strip().lower()
@@ -91,13 +94,14 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
         return
 
     log.info("用户输入: %s | 类别: %s", user_input, categories)
-    system = memory.build_system_prompt(categories)
+    memory.system = memory.build_system_prompt(categories)
     memory.add("user", user_input)
 
     spinner.start("正在思考...")
 
-    for step in range(MAX_REACT_STEPS):
-        messages = [{"role": "system", "content": system}] + memory.get_messages()
+    step = 0
+    while True:
+        messages = memory.get_messages()
         _log_request(messages, tools)
 
         spinner.set("正在等待模型回复...")
@@ -127,7 +131,6 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
                 log.info("记忆已更新: %s", new_facts)
             spinner.stop()
             print(f"\nAssistant: {msg.content}\n")
-            log.info("最终回复: %s", msg.content)
             break
 
         for tc in msg.tool_calls:
@@ -144,6 +147,7 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
             log.info("工具调用 [step=%d]: %s %s", step, tool_name, tool_input)
 
             if is_dangerous(tool_name):
+                spinner.stop()
                 if not confirm_dangerous(tool_name, tool_input):
                     log.info("用户取消: %s", tool_name)
                     memory.session_messages.append({
@@ -154,16 +158,23 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
 
             spinner.set(f"正在执行 {tool_name}...")
             result = execute_tool(tool_name, tool_input)
-            log.info("工具结果: ok=%s | %s", result.get("ok"), str(result.get("data", result))[:500])
+            log.info("工具结果: ok=%s | %s", result.get("ok"), str(result.get("data", result)))
 
             memory.session_messages.append({
                 "role": "tool", "tool_call_id": tc.id,
                 "content": json.dumps(result, ensure_ascii=False),
             })
-    else:
-        spinner.stop()
-        log.warning("达到最大步骤数 (%d)", MAX_REACT_STEPS)
-        print("[警告] 达到最大步骤数")
+        step += 1
+        if step >= MAX_REACT_STEPS:
+            spinner.stop()
+            log.warning("达到最大步骤数 (%d)", MAX_REACT_STEPS)
+            print("[警告] 达到最大步骤数")
+            ans = input("是否继续? (y/n): ")
+            if ans.strip().lower() != "y":
+                break
+            else:
+                log.info("用户选择继续，重置步骤计数")
+                step = 0
 
 
 def _ensure_admin():
