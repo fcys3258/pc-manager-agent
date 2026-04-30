@@ -123,12 +123,6 @@ def run_react_loop(user_input: str, memory: Memory, categories: list[str]):
         memory.session_messages[-1] = assistant_msg
 
         if finish_reason == "stop" or not msg.tool_calls:
-            spinner.set("正在总结对话...")
-            new_facts = extract_facts(memory.get_messages(), memory.facts)
-            if new_facts:
-                memory.facts = new_facts
-                memory.save_facts()
-                log.info("记忆已更新: %s", new_facts)
             spinner.stop()
             print(f"\nAssistant: {msg.content}\n")
             break
@@ -202,6 +196,15 @@ def main():
             continue
         if user_input.lower() == "quit":
             memory.save_trajectory()
+
+            spinner.set("正在总结对话...")
+            new_facts = extract_facts(memory.get_messages(), memory.facts)
+            spinner.stop()
+            if new_facts:
+                memory.facts = new_facts
+                memory.save_facts()
+                log.info("记忆已更新: %s", new_facts)
+
             memory.save_facts()
             print("已保存记忆，再见。")
             break

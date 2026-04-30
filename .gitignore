@@ -14,5 +14,7 @@ __MACOSX/
 
 # IDE / Kiro
 .claude/
+CLAUDE.md
+Plan.md
 
 .env
